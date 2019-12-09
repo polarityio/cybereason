@@ -16,6 +16,169 @@ const tokenCache = new NodeCache({
   stdTTL: 1000 * 1000
 });
 
+function getAuthToken({ url: cyberReasonUrl, username, password }, callback) {
+  const cacheKey = `${username}${password}`;
+
+  const cachedToken = tokenCache.get(cacheKey);
+  if (cachedToken) return callback(null, cachedToken);
+
+  request(
+    {
+      method: "POST",
+      uri: `${cyberReasonUrl}/login.html`,
+      qs: {
+        username,
+        password
+      },
+      headers: { "Content-Type": "application/x-www-form-urlencoded" }
+    }, (err, resp, body) => {
+      if (err) {
+        callback(err);
+        return;
+      }
+
+      Logger.trace({ resp }, "Result of token lookup");
+
+      if (resp.statusCode !== 200 && resp.statusCode !== 302) {
+        callback({ err: new Error("status code was not 200"), body });
+        return;
+      }
+
+      let cookie = resp.headers['set-cookie'][0].split(";")[0];
+      if (typeof cookie === undefined) {
+        callback({ err: new Error("Cookie Not Avilable"), body });
+        return;
+      }
+
+      tokenCache.set(cacheKey, { cookie });
+
+      Logger.trace({ tokenCache }, "Checking TokenCache");
+
+      callback(null, { cookie });
+    }
+  );
+}
+
+function generateRequestBody(entity) {
+  return {
+    queryPath: [
+        {
+            requestedType: "DomainName",
+            result: true,
+            filters: [
+                {
+                    facetName: "elementDisplayName",
+                    values: [
+                        "r2.sn-vgqsknes.gvt1.com"
+                    ],
+                    filterType: "ContainsIgnoreCase"
+                }
+            ],
+            connectionFeature: {
+                elementInstanceType: "Connection",
+                featureName: "remoteAddress"
+            },
+            isReversed: true,
+            isResult: true
+        }
+    ],
+    totalResultLimit: 1000,
+    perGroupLimit: 1000,
+    perFeatureLimit: 100,
+    templateContext: "DETAILS",
+    customFields: [
+        "self",
+        "elementDisplayName",
+        "name",
+        "topLevelDomain",
+        "secondLevelDomain",
+        "maliciousClassificationType",
+        "relatedToMalop",
+        "isTorrentDomain",
+        "isInternalDomain",
+        "isInternalSecondLevelDomain",
+        "everResolvedDomain",
+        "everResolvedSecondLevelDomain",
+        "isReverseLookup"
+    ]
+}
+}
+
+function doLookup(entities, options, cb) {
+  Logger.debug(entities, "Entities");
+
+  getAuthToken(options, (err, token) => {
+    if (err) {
+      Logger.error("Get token errored", err);
+      return;
+    }
+
+    Logger.trace({ token }, "Token in doLookup");
+
+
+    const tasks = entities.map(entity => (done) =>
+      requestWithDefaults({
+        method: "post",
+        uri: `${options.url}/rest/visualsearch/query/simple`,
+        headers: {
+          Cookie: token.cookie,
+          "Content-Type": "application/json"
+        },
+        body: generateRequestBody(entity),
+        json: true
+      }, (error, res, body) => {
+        if (error) {
+          return done(error);
+        }
+        const statusCode = res && res.statusCode;
+
+
+        Logger.trace(
+          { body, statusCode: statusCode || "N/A" },
+          "Result of Lookup"
+        );
+
+        done(null, {
+          entity,
+          body
+        });
+      })
+    );
+
+    let lookupResults = [];
+    async.parallelLimit(tasks, MAX_PARALLEL_LOOKUPS, (err, results) => {
+      if (err) {
+        Logger.error({ err }, "Error");
+        cb(err);
+        return;
+      }
+
+      results.forEach(({ body, entity }) => {
+        if (body === null || _isMiss(body) || _.isEmpty(body)) {
+          lookupResults.push({
+            entity,
+            data: {
+              details: { test: "This is a test placeholder" }
+            }
+          });
+        } else {
+          lookupResults.push({
+            entity,
+            data: {
+              details: { test: "This is a test placeholder" }
+            }
+          });
+        }
+      });
+
+      Logger.debug({ lookupResults }, "Results");
+      cb(null, lookupResults);
+    });
+  })
+}
+
+const _isMiss = (body) => !body;
+
 function startup(logger) {
   let defaults = {};
   Logger = logger;
@@ -48,69 +211,6 @@ function startup(logger) {
 
   requestWithDefaults = request.defaults(defaults);
 }
-
-function doLookup(entities, options, cb) {
-  let lookupResults = [];
-  let tasks = [];
-
-  Logger.debug(entities);
-
-  let requestOptions = { method: "GET", uri: `${options.url}` };
-
-  entities.forEach(entity => {
-    tasks.push(function (done) {
-      requestWithDefaults(requestOptions, function (error, res, body) {
-        const statusCode = res && res.statusCode;
-        if (error) {
-          return done(error);
-        }
-
-        Logger.trace(requestOptions);
-        Logger.trace(
-          { body, statusCode: statusCode || "N/A" },
-          "Result of Lookup"
-        );
-
-        done(null, {
-          entity,
-          body
-        });
-      });
-    });
-  });
-
-
-  async.parallelLimit(tasks, MAX_PARALLEL_LOOKUPS, (err, results) => {
-    if (err) {
-      Logger.error({ err }, "Error");
-      cb(err);
-      return;
-    }
-
-    results.forEach(({ body, entity }) => {
-      if (body === null || _isMiss(body) || _.isEmpty(body)) {
-        lookupResults.push({
-          entity,
-          data: {
-            details: { test: "This is a test placeholder" }
-          }
-        });
-      } else {
-        lookupResults.push({
-          entity,
-          data: {
-            details: { test: "This is a test placeholder" }
-          }
-        });
-      }
-    });
-
-    Logger.debug({ lookupResults }, "Results");
-    cb(null, lookupResults);
-  });
-}
-
-const _isMiss = (body) => !body;
 
 function validateStringOption(errors, options, optionName, errMessage) {
   if (
