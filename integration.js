@@ -2,19 +2,27 @@
 
 const request = require("request");
 const _ = require("lodash");
-const config = require("./config/config");
 const async = require("async");
-const fs = require("fs");
+const NodeCache = require("node-cache");
+
+const { validateOptions, getRequestWithDefaults } = require("./helpers/validateAndStartup");
+
+const generateRequestBody = require("./helpers/generateRequestBody");
+const handleRequestStatusCode = require("./helpers/handleRequestStatusCode");
+const getLookupResults = require("./helpers/getLookupResults");
 
 let Logger;
 let requestWithDefaults;
-
 const MAX_PARALLEL_LOOKUPS = 10;
 
-const NodeCache = require("node-cache");
 const tokenCache = new NodeCache({
-  stdTTL: 1000 * 1000
+  stdTTL: 8 * 60 * 60 - 1200 //Token lasts 8 hours
 });
+
+function startup(logger) {
+  Logger = logger;
+  requestWithDefaults = getRequestWithDefaults();
+}
 
 function getAuthToken({ url: cyberReasonUrl, username, password }, callback) {
   const cacheKey = `${username}${password}`;
@@ -31,7 +39,8 @@ function getAuthToken({ url: cyberReasonUrl, username, password }, callback) {
         password
       },
       headers: { "Content-Type": "application/x-www-form-urlencoded" }
-    }, (err, resp, body) => {
+    },
+    (err, resp, body) => {
       if (err) {
         callback(err);
         return;
@@ -44,11 +53,13 @@ function getAuthToken({ url: cyberReasonUrl, username, password }, callback) {
         return;
       }
 
-      let cookie = resp.headers['set-cookie'][0].split(";")[0];
-      if (typeof cookie === undefined) {
-        callback({ err: new Error("Cookie Not Avilable"), body });
-        return;
-      }
+      const cookie =
+        resp.headers["set-cookie"] &&
+        resp.headers["set-cookie"][0] &&
+        typeof resp.headers["set-cookie"][0] === "string" &&
+        resp.headers["set-cookie"][0].split(";")[0];
+
+      if (!cookie) return callback({ err: new Error("Cookie Not Avilable"), body });
 
       tokenCache.set(cacheKey, { cookie });
 
@@ -59,53 +70,53 @@ function getAuthToken({ url: cyberReasonUrl, username, password }, callback) {
   );
 }
 
-function generateRequestBody(entity) {
-  return {
-    queryPath: [
+const formatQueryResponse = (entityGroup, entityGroupType, done) => (requestError, res, body) => {
+  if (requestError) return done(requestError);
+
+  const statusCode = res && res.statusCode;
+
+  Logger.trace({ body, statusCode: statusCode || "N/A" }, "Result of Lookup");
+
+  const [statusError, result] = handleRequestStatusCode(entityGroup, statusCode, body);
+  if (statusError) return done(statusError);
+
+  if (_.isEmpty(result.body.data.resultIdToElementDataMap)) return done(null, { ...result, body: null });
+
+  done(null, {
+    ...result,
+    entityGroupType,
+    body: _.map(result.body.data.resultIdToElementDataMap, (value) => value)
+  });
+};
+
+const createRequestQueue = (entities, options, token) =>
+  _.chain(entities)
+    //TODO: Ask if domains also should be search in files
+    .groupBy(({ isIP, isDomain, isMD5, isSHA1 }) =>
+      isIP ? "ip" : isDomain ? "domain" : isMD5 ? "md5" : isSHA1 ? "sha1" : "unknown"
+    )
+    .map((entityGroup, entityGroupType) => (done) =>
+      entityGroupType !== "unknown" &&
+      requestWithDefaults(
         {
-            requestedType: "DomainName",
-            result: true,
-            filters: [
-                {
-                    facetName: "elementDisplayName",
-                    values: [
-                        "r2.sn-vgqsknes.gvt1.com"
-                    ],
-                    filterType: "ContainsIgnoreCase"
-                }
-            ],
-            connectionFeature: {
-                elementInstanceType: "Connection",
-                featureName: "remoteAddress"
-            },
-            isReversed: true,
-            isResult: true
-        }
-    ],
-    totalResultLimit: 1000,
-    perGroupLimit: 1000,
-    perFeatureLimit: 100,
-    templateContext: "DETAILS",
-    customFields: [
-        "self",
-        "elementDisplayName",
-        "name",
-        "topLevelDomain",
-        "secondLevelDomain",
-        "maliciousClassificationType",
-        "relatedToMalop",
-        "isTorrentDomain",
-        "isInternalDomain",
-        "isInternalSecondLevelDomain",
-        "everResolvedDomain",
-        "everResolvedSecondLevelDomain",
-        "isReverseLookup"
-    ]
-}
-}
+          method: "post",
+          uri: `${options.url}/rest/visualsearch/query/simple`,
+          headers: {
+            Cookie: token.cookie,
+            "Content-Type": "application/json"
+          },
+          body: generateRequestBody(entityGroup, entityGroupType),
+          json: true
+        },
+        formatQueryResponse(entityGroup, entityGroupType, done)
+      )
+    )
+    .value();
+
+
 
 function doLookup(entities, options, cb) {
-  Logger.debug(entities, "Entities");
+  Logger.trace({ entities }, "Entities");
 
   getAuthToken(options, (err, token) => {
     if (err) {
@@ -115,139 +126,22 @@ function doLookup(entities, options, cb) {
 
     Logger.trace({ token }, "Token in doLookup");
 
+    const requestQueue = createRequestQueue(entities, options, token);
 
-    const tasks = entities.map(entity => (done) =>
-      requestWithDefaults({
-        method: "post",
-        uri: `${options.url}/rest/visualsearch/query/simple`,
-        headers: {
-          Cookie: token.cookie,
-          "Content-Type": "application/json"
-        },
-        body: generateRequestBody(entity),
-        json: true
-      }, (error, res, body) => {
-        if (error) {
-          return done(error);
-        }
-        const statusCode = res && res.statusCode;
-
-
-        Logger.trace(
-          { body, statusCode: statusCode || "N/A" },
-          "Result of Lookup"
-        );
-
-        done(null, {
-          entity,
-          body
-        });
-      })
-    );
-
-    let lookupResults = [];
-    async.parallelLimit(tasks, MAX_PARALLEL_LOOKUPS, (err, results) => {
+    async.parallelLimit(requestQueue, MAX_PARALLEL_LOOKUPS, (err, results) => {
       if (err) {
         Logger.error({ err }, "Error");
-        cb(err);
-        return;
+        return cb(err);
       }
 
-      results.forEach(({ body, entity }) => {
-        if (body === null || _isMiss(body) || _.isEmpty(body)) {
-          lookupResults.push({
-            entity,
-            data: {
-              details: { test: "This is a test placeholder" }
-            }
-          });
-        } else {
-          lookupResults.push({
-            entity,
-            data: {
-              details: { test: "This is a test placeholder" }
-            }
-          });
-        }
-      });
+      const lookupResults = getLookupResults(results);
 
-      Logger.debug({ lookupResults }, "Results");
+      Logger.trace({ lookupResults }, "Results");
       cb(null, lookupResults);
     });
-  })
+  });
 }
 
-const _isMiss = (body) => !body;
-
-function startup(logger) {
-  let defaults = {};
-  Logger = logger;
-
-  const { cert, key, ca, passphrase, proxy, rejectUnauthorized } = config.request;
-
-  if (typeof cert === "string" && cert.length > 0) {
-    defaults.cert = fs.readFileSync(cert);
-  }
-
-  if (typeof key === "string" && key.length > 0) {
-    defaults.key = fs.readFileSync(key);
-  }
-
-  if (typeof ca === "string" && ca.length > 0) {
-    defaults.ca = fs.readFileSync(ca);
-  }
-
-  if (typeof passphrase === "string" && passphrase.length > 0) {
-    defaults.passphrase = passphrase;
-  }
-
-  if (typeof proxy === "string" && proxy.length > 0) {
-    defaults.proxy = proxy;
-  }
-
-  if (typeof rejectUnauthorized === "boolean") {
-    defaults.rejectUnauthorized = rejectUnauthorized;
-  }
-
-  requestWithDefaults = request.defaults(defaults);
-}
-
-function validateStringOption(errors, options, optionName, errMessage) {
-  if (
-    typeof options[optionName].value !== "string" ||
-    (typeof options[optionName].value === "string" &&
-      options[optionName].value.length === 0)
-  ) {
-    errors.push({
-      key: optionName,
-      message: errMessage
-    });
-  }
-}
-
-function validateOptions(options, callback) {
-  let errors = [];
-
-  validateStringOption(
-    errors,
-    options,
-    "url",
-    "You must provide a valid API URL"
-  );
-  validateStringOption(
-    errors,
-    options,
-    "username",
-    "You must provide a valid Username"
-  );
-  validateStringOption(
-    errors,
-    options,
-    "password",
-    "You must provide a valid Password"
-  );
-  callback(null, errors);
-}
 
 module.exports = {
   doLookup,

@@ -2,7 +2,7 @@ module.exports = {
   name: "CyberReason",
   acronym: "CR",
   description:"CyberReason",
-  entityTypes: ['IPv4'],
+  entityTypes: ['IPv4', 'domain', "SHA1", "MD5"],
   styles: ["./styles/sc.less"],
   block: {
     component: {
