@@ -1,23 +1,31 @@
 const _ = require("lodash");
 
-const getLookupResults = (results) =>
-  _.chain(results)
-    .filter(({ body }) => !_isMiss(body))
-    .flatMap(({ entity: entityGroup, entityGroupType, body }) =>
-      entityGroup
-        .map((entity) => ({
-          entity,
-          data: _.chain(body)
-            .filter(resultMatchesEntity(entityGroupType, entity))
-            .map(formatResult)
-            .thru(aggregrateResults(entityGroupType))
-            .value()
-        }))
-        .filter(({ data }) => !_.isEmpty(data))
-    )
-    .value();
+const { QUERY_CONSTANTS, CLASSIFICATION_TYPE_MAP } = require("./constants");
 
-const _isMiss = (body) => !body || _.isEmpty(body);
+const getLookupResults = (results) => {
+  const getLookupResultDetailsForEntity = (body, entityGroupType, entity) =>
+    _.chain(body)
+      .filter(resultMatchesEntity(entityGroupType, entity))
+      .map(formatResult)
+      .thru(aggregrateResultsForEntity(entityGroupType))
+      .value();
+      
+  return (
+    _.chain(results)
+      .filter(({ body }) => !_isMiss(body))
+      .flatMap(({ entity: entityGroup, entityGroupType, body }) =>
+        entityGroup
+          .map((entity) => ({
+            entity,
+            data: getLookupResultDetailsForEntity(body, entityGroupType, entity)
+          }))
+          .filter(({ data }) => !_.isEmpty(data))
+      )
+      .value()
+  );
+};
+
+const _isMiss = (body) => _.isEmpty(body);
 
 const resultMatchesEntity = (entityGroupType, entity) => (result) =>
   ({
@@ -25,8 +33,10 @@ const resultMatchesEntity = (entityGroupType, entity) => (result) =>
       elementDisplayName.values[0].toLowerCase() === entity.value.toLowerCase(),
     domain: ({ elementDisplayName }) =>
       elementDisplayName.values[0].toLowerCase() === entity.value.toLowerCase(),
-    md5: ({ md5String }) => md5String.values[0].toLowerCase() === entity.value.toLowerCase(),
-    sha1: ({ sha1String }) => sha1String.values[0].toLowerCase() === entity.value.toLowerCase()
+    md5: ({ md5String }) =>
+      md5String.values[0].toLowerCase() === entity.value.toLowerCase(),
+    sha1: ({ sha1String }) =>
+      sha1String.values[0].toLowerCase() === entity.value.toLowerCase()
   }[entityGroupType](result.simpleValues));
 
 const formatResult = ({
@@ -44,75 +54,86 @@ const formatResult = ({
   hasMalops: self.elementValues[0].hasMalops,
   ...(!_.isEmpty(suspicions) && { suspicions }),
   ...(!_.isEmpty(ownerMachine) && {
-    machineNameOfFileLocation: ownerMachine.elementValues[0].name
+    machineNameWhereFileIsLocated: ownerMachine.elementValues[0].name
   })
 });
 
-const aggregrateResults = (entityGroupType) =>
-  ({
-    ip: (results) => {
-      const otherPossibleSuspicions = ["isMalicious", "hasMalops", "accessedByMalwaresOnly"];
-      const suspicions = transformSuspicions(results, otherPossibleSuspicions);
+const aggregrateResultsForEntity = (entityGroupType) => (resultsForEntity) => {
+  if (_.isEmpty(resultsForEntity)) return;
 
-      const maliciousClassificationTypes = createClassificationTypes(results);
-
-      return {
-        details: {
-          test: JSON.stringify({
-            name: results[0].elementDisplayName,
-            country: results[0].countryNameOrNotExternalType,
-            city: results[0].city,
-            suspicionCount: suspicions.length,
-            ...(suspicions.length && { suspicions }),
-            ...(maliciousClassificationTypes.length && { maliciousClassificationTypes })
-          })
-        }
-      };
-    },
-    domain: (results) => {
-      const otherPossibleSuspicions = [
+  const aggregateConsistentFields = (
+    entityType, 
+    createInconsistentFields = () => ({})
+  ) => (resultsForEntity) => {
+    const suspicions = transformSuspicions(
+      resultsForEntity,
+      QUERY_CONSTANTS[entityType].customSuspicionFlags.concat([
         "isMalicious",
-        "hasMalops",
-        "isMaliciousDomainEvidence",
-        "isInternalDomain",
-        "isTorrentDomain",
-        "isReverseLookup"
-      ];
+        "hasMalops"
+      ])
+    );
 
-      const suspicions = transformSuspicions(results, otherPossibleSuspicions);
+    const maliciousClassificationTypes = createClassificationTypes(resultsForEntity);
 
-      const maliciousClassificationTypes = createClassificationTypes(results);
+    return {
+      details: {
+        ...createInconsistentFields(resultsForEntity),
+        suspicionCount: suspicions.length,
+        ...(suspicions.length && { suspicions }),
+        ...(maliciousClassificationTypes.length && {
+          maliciousClassificationTypes
+        })
+      }
+    };
+  };
 
-      return {
-        details: {
-          test: JSON.stringify({
-            name: results[0].elementDisplayName,
-            suspicionCount: suspicions.length,
-            ...(suspicions.length && { suspicions }),
-            ...(maliciousClassificationTypes.length && { maliciousClassificationTypes })
-          })
-        }
-      };
-    },
-    md5: (result) => ({ details: { test: JSON.stringify(result, null, 2) } }),
-    sha1: (result) => ({ details: { test: JSON.stringify(result, null, 2) } })
-  }[entityGroupType]);
+  const aggregateFile = aggregateConsistentFields(entityGroupType, (resultsForEntity) => ({
+    name: resultsForEntity[0].md5String,
+    fileName: resultsForEntity[0].elementDisplayName,
+    sha1Hash: resultsForEntity[0].sha1String,
 
-const createClassificationTypes = (results) =>
-  results.reduce(
-    (agg, result) =>
-      !agg.includes(result.maliciousClassificationType)
-        ? [...agg, result.maliciousClassificationType]
-        : agg,
-    []
-  );
+    productType: resultsForEntity[0].productType,
+    productName: resultsForEntity[0].productName,
+    extensionType: resultsForEntity[0].extensionType,
+    fileDescription: resultsForEntity[0].fileDescription,
+    size: resultsForEntity[0].size,
 
-const transformSuspicions = (results, otherPossibleSuspicionsKeys) => {
+    companyName: resultsForEntity[0].companyName,
+    machineNamesWhereFileIsLocated: resultsForEntity.map(
+      (result) => result.machineNameWhereFileIsLocated
+    )
+  }));
+
+  return {
+    ip: aggregateConsistentFields(entityGroupType, (resultsForEntity) => ({
+      name: resultsForEntity[0].elementDisplayName,
+      country: resultsForEntity[0].countryNameOrNotExternalType,
+      city: resultsForEntity[0].city
+    })),
+
+    domain: aggregateConsistentFields(entityGroupType, (resultsForEntity) => ({
+      name: resultsForEntity[0].elementDisplayName
+    })),
+    md5: aggregateFile,
+    sha1: aggregateFile
+  }[entityGroupType](resultsForEntity);
+};
+
+const createClassificationTypes = (resultsForEntity) =>
+  resultsForEntity.reduce((agg, { maliciousClassificationType }) => {
+    if (_.isEmpty(maliciousClassificationType)) return agg;
+
+    const classType = CLASSIFICATION_TYPE_MAP[maliciousClassificationType];
+
+    return !agg.includes(classType) ? [...agg, classType] : agg;
+  }, []);
+
+const transformSuspicions = (resultsForEntity, otherPossibleSuspicionsKeys) => {
   /* 
-  Input: results[i].suspicions = { blackListedFileSuspicion: 123422142342134 }
-  Output: ["BlackListedFile"]
-*/
-  const normalSuspicionsFlags = _.chain(results)
+    Input: resultsForEntity[i].suspicions = { blackListedFileSuspicion: 123422142342134 }
+    Output: ["BlackListedFile"]
+  */
+  const normalSuspicionsFlags = _.chain(resultsForEntity)
     .filter(({ suspicions }) => suspicions)
     .flatMap((result) => _.keys(result.suspicions))
     .uniq()
@@ -124,24 +145,25 @@ const transformSuspicions = (results, otherPossibleSuspicionsKeys) => {
     .values();
 
   /* 
-  Input: otherPossibleSuspicionsKeys = ["isMalicious", "hasMalops"]
-  Output: ["IsMalicious"] for all flags that are true in result[i].key[i]
-*/
-  const otherPossibleSuspicionFlags = results.reduce(
-    (agg, result) => [
-      ...agg,
-      ...otherPossibleSuspicionsKeys.reduce(
-        (agg, suspicionKey) =>
-          result[suspicionKey] && !agg.includes(_.upperFirst(suspicionKey))
-            ? [...agg, _.upperFirst(suspicionKey)]
-            : agg,
-        []
-      )
-    ],
+    Input: otherPossibleSuspicionsKeys = ["isMalicious", "hasMalops"]
+    Output: ["IsMalicious"] only if that flag is true on at least one result
+  */
+  const otherPossibleSuspicionFlags = resultsForEntity.reduce(
+    (agg, result) =>
+      agg.concat(otherPossibleSuspicionsKeys.reduce(
+          (agg, suspicionKey) =>
+            result[suspicionKey] &&
+            result[suspicionKey] !== "false" &&
+            !agg.includes(_.upperFirst(suspicionKey))
+              ? [...agg, _.upperFirst(suspicionKey)]
+              : agg,
+          []
+        )
+      ),
     []
   );
 
-  return normalSuspicionsFlags.concat(otherPossibleSuspicionFlags);
+  return normalSuspicionsFlags.concat(otherPossibleSuspicionFlags).sort();
 };
 
 module.exports = getLookupResults;

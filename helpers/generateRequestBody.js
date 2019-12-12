@@ -1,65 +1,11 @@
-const FILE_CUSTOM_FIELDS = [
-  "name",
-  "md5String",
-  "sha1String",
-
-  "productType",
-  "productName",
-  "extensionType",
-  "fileDescription",
-  "size",
-
-  "hasAutorun",
-  "fileIsQuarantined",
-  "hiddenFileExtensionEvidence",
-  "hackingToolClassificationEvidence",
-  "whitelistClassificationEvidence",
-  "blackListedFileSuspicion",
-
-  "companyName",
-  "ownerMachine"
-];
-
-const QUERY_CONSTANTS = {
-  ip: {
-    queryType: "IpAddress",
-    entityTypeSpecificCustomFields: [
-      "countryNameOrNotExternalType",
-      "city",
-      "accessedByMalwaresOnly"
-    ],
-    searchOn: "elementDisplayName"
-  },
-  domain: {
-    queryType: "DomainName",
-    entityTypeSpecificCustomFields: [
-      "isMaliciousDomainEvidence",
-      "isInternalDomain",
-      "isTorrentDomain",
-      "isReverseLookup"
-    ],
-    searchOn: "elementDisplayName"
-  },
-  md5: {
-    queryType: "File",
-    entityTypeSpecificCustomFields: FILE_CUSTOM_FIELDS,
-    searchOn: "md5String"
-  },
-  sha1: {
-    queryType: "File",
-    entityTypeSpecificCustomFields: FILE_CUSTOM_FIELDS,
-    searchOn: "sha1String"
-  },
-  customFields: [
-    "self",
-    "relatedToMalop",
-    "maliciousClassificationType",
-    "elementDisplayName"
-  ]
-};
+const { QUERY_CONSTANTS } = require("./constants");
 
 const generateRequestBody = (entityGroup, entityGroupType) => {
-  const { queryType, searchOn, entityTypeSpecificCustomFields } = QUERY_CONSTANTS[entityGroupType];
+  const { 
+    queryType, 
+    searchOn, 
+    entityTypeSpecificCustomFields 
+  } = QUERY_CONSTANTS[entityGroupType];
 
   return {
     queryPath: [

@@ -5,8 +5,10 @@ const _ = require("lodash");
 const async = require("async");
 const NodeCache = require("node-cache");
 
-const { validateOptions, getRequestWithDefaults } = require("./helpers/validateAndStartup");
-
+const {
+  validateOptions,
+  getRequestWithDefaults
+} = require("./helpers/validateAndStartup");
 const generateRequestBody = require("./helpers/generateRequestBody");
 const handleRequestStatusCode = require("./helpers/handleRequestStatusCode");
 const getLookupResults = require("./helpers/getLookupResults");
@@ -30,47 +32,48 @@ function getAuthToken({ url: cyberReasonUrl, username, password }, callback) {
   const cachedToken = tokenCache.get(cacheKey);
   if (cachedToken) return callback(null, cachedToken);
 
-  request(
-    {
-      method: "POST",
-      uri: `${cyberReasonUrl}/login.html`,
-      qs: {
-        username,
-        password
-      },
-      headers: { "Content-Type": "application/x-www-form-urlencoded" }
+  const requestOptions = {
+    method: "POST",
+    uri: `${cyberReasonUrl}/login.html`,
+    qs: {
+      username,
+      password
     },
-    (err, resp, body) => {
-      if (err) {
-        callback(err);
-        return;
-      }
+    headers: { "Content-Type": "application/x-www-form-urlencoded" }
+  };
 
-      Logger.trace({ resp }, "Result of token lookup");
-
-      if (resp.statusCode !== 200 && resp.statusCode !== 302) {
-        callback({ err: new Error("status code was not 200"), body });
-        return;
-      }
-
-      const cookie =
-        resp.headers["set-cookie"] &&
-        resp.headers["set-cookie"][0] &&
-        typeof resp.headers["set-cookie"][0] === "string" &&
-        resp.headers["set-cookie"][0].split(";")[0];
-
-      if (!cookie) return callback({ err: new Error("Cookie Not Avilable"), body });
-
-      tokenCache.set(cacheKey, { cookie });
-
-      Logger.trace({ tokenCache }, "Checking TokenCache");
-
-      callback(null, { cookie });
+  request(requestOptions, (err, resp, body) => {
+    if (err) {
+      callback(err);
+      return;
     }
-  );
+
+    Logger.trace({ resp }, "Result of token lookup");
+
+    if (resp.statusCode !== 200 && resp.statusCode !== 302)
+      return callback({ err: new Error("status code was not 200"), body });
+
+    const cookie =
+      resp.headers["set-cookie"] &&
+      resp.headers["set-cookie"][0] &&
+      typeof resp.headers["set-cookie"][0] === "string" &&
+      resp.headers["set-cookie"][0].split(";")[0];
+
+    if (!cookie) return callback({ err: new Error("Cookie Not Avilable"), body });
+
+    tokenCache.set(cacheKey, { cookie });
+
+    Logger.trace({ tokenCache }, "Checking TokenCache");
+
+    callback(null, { cookie });
+  });
 }
 
-const formatQueryResponse = (entityGroup, entityGroupType, done) => (requestError, res, body) => {
+const formatQueryResponse = (entityGroup, entityGroupType, done) => (
+  requestError,
+  res,
+  body
+) => {
   if (requestError) return done(requestError);
 
   const statusCode = res && res.statusCode;
@@ -80,7 +83,8 @@ const formatQueryResponse = (entityGroup, entityGroupType, done) => (requestErro
   const [statusError, result] = handleRequestStatusCode(entityGroup, statusCode, body);
   if (statusError) return done(statusError);
 
-  if (_.isEmpty(result.body.data.resultIdToElementDataMap)) return done(null, { ...result, body: null });
+  if (_.isEmpty(result.body.data.resultIdToElementDataMap))
+    return done(null, { ...result, body: null });
 
   done(null, {
     ...result,
@@ -91,9 +95,12 @@ const formatQueryResponse = (entityGroup, entityGroupType, done) => (requestErro
 
 const createRequestQueue = (entities, options, token) =>
   _.chain(entities)
-    //TODO: Ask if domains also should be search in files
     .groupBy(({ isIP, isDomain, isMD5, isSHA1 }) =>
-      isIP ? "ip" : isDomain ? "domain" : isMD5 ? "md5" : isSHA1 ? "sha1" : "unknown"
+      isIP ? "ip" : 
+      isDomain ? "domain" : 
+      isMD5 ? "md5" : 
+      isSHA1 ? "sha1" : 
+      "unknown"
     )
     .map((entityGroup, entityGroupType) => (done) =>
       entityGroupType !== "unknown" &&
@@ -113,16 +120,12 @@ const createRequestQueue = (entities, options, token) =>
     )
     .value();
 
-
-
 function doLookup(entities, options, cb) {
   Logger.trace({ entities }, "Entities");
 
   getAuthToken(options, (err, token) => {
-    if (err) {
-      Logger.error("Get token errored", err);
-      return;
-    }
+    if (err)
+      return Logger.error("Get token errored", err);
 
     Logger.trace({ token }, "Token in doLookup");
 
@@ -141,7 +144,6 @@ function doLookup(entities, options, cb) {
     });
   });
 }
-
 
 module.exports = {
   doLookup,
