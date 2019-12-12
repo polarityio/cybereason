@@ -124,7 +124,7 @@ const createRequestQueue = (entities, options, token) =>
     .value();
 
 function doLookup(entities, options, cb) {
-  Logger.trace({ entities }, "Entities");
+  Logger.debug({ entities }, "Entities");
 
   getAuthToken(options, (err, token) => {
     if (err)

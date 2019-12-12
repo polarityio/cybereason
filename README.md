@@ -1,5 +1,6 @@
 # Polarity - CyberReason Integration
 
+CyberReason is a platform that provides next generation anti-virus and endpoint detection response and management capabilities.
 The Polarity CyberReason integration allows Polarity to search CyberReason's API to return threat information on IP's, Domains and File Hashes.
 
 ## CyberReason Integration Options
