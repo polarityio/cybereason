@@ -77,18 +77,17 @@ const aggregrateResultsForEntity = (entityGroupType) => (resultsForEntity) => {
 
     return {
       details: {
-        ...createInconsistentFields(resultsForEntity),
-        suspicionCount: suspicions.length,
+        suspicionCount: _.toString(suspicions.length) || "0",
         ...(suspicions.length && { suspicions }),
-        ...(maliciousClassificationTypes.length && {
-          maliciousClassificationTypes
-        })
+        ...(maliciousClassificationTypes.length && { maliciousClassificationTypes }),
+        ...createInconsistentFields(resultsForEntity)
       }
     };
   };
 
   const aggregateFile = aggregateConsistentFields(entityGroupType, (resultsForEntity) => ({
     name: resultsForEntity[0].md5String,
+    entityType: entityGroupType.toUpperCase(),
     fileName: resultsForEntity[0].elementDisplayName,
     sha1Hash: resultsForEntity[0].sha1String,
 
@@ -99,20 +98,22 @@ const aggregrateResultsForEntity = (entityGroupType) => (resultsForEntity) => {
     size: resultsForEntity[0].size,
 
     companyName: resultsForEntity[0].companyName,
-    machineNamesWhereFileIsLocated: resultsForEntity.map(
-      (result) => result.machineNameWhereFileIsLocated
-    )
+    machineNamesWhereFileIsLocated: _.chain(resultsForEntity)
+      .map((result) => result.machineNameWhereFileIsLocated)
+      .uniq()
+      .value()
   }));
 
   return {
     ip: aggregateConsistentFields(entityGroupType, (resultsForEntity) => ({
       name: resultsForEntity[0].elementDisplayName,
+      entityType: "IPv4",
       country: resultsForEntity[0].countryNameOrNotExternalType,
       city: resultsForEntity[0].city
     })),
-
     domain: aggregateConsistentFields(entityGroupType, (resultsForEntity) => ({
-      name: resultsForEntity[0].elementDisplayName
+      name: resultsForEntity[0].elementDisplayName,
+      entityType: "Domain"
     })),
     md5: aggregateFile,
     sha1: aggregateFile
@@ -126,7 +127,7 @@ const createClassificationTypes = (resultsForEntity) =>
     const classType = CLASSIFICATION_TYPE_MAP[maliciousClassificationType];
 
     return !agg.includes(classType) ? [...agg, classType] : agg;
-  }, []);
+  }, []).join(", ");
 
 const transformSuspicions = (resultsForEntity, otherPossibleSuspicionsKeys) => {
   /* 
