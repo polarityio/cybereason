@@ -1,13 +1,18 @@
 const _ = require("lodash");
 
-const { QUERY_CONSTANTS, CLASSIFICATION_TYPE_MAP } = require("./constants");
+const { 
+  QUERY_CONSTANTS, 
+  CLASSIFICATION_TYPE_MAP, 
+  EXTENSION_TYPE_MAP,
+  PRODUCT_TYPE_MAP
+} = require("./constants");
 
-const getLookupResults = (results) => {
-  const getLookupResultDetailsForEntity = (body, entityGroupType, entity) =>
+const getLookupResults = (results, url) => {
+  const getLookupResultDetailsForEntity = (body, entityGroupType, entity, url) =>
     _.chain(body)
       .filter(resultMatchesEntity(entityGroupType, entity))
       .map(formatResult)
-      .thru(aggregrateResultsForEntity(entityGroupType))
+      .thru(aggregrateResultsForEntity(entityGroupType, url))
       .value();
       
   return (
@@ -17,7 +22,7 @@ const getLookupResults = (results) => {
         entityGroup
           .map((entity) => ({
             entity,
-            data: getLookupResultDetailsForEntity(body, entityGroupType, entity)
+            data: getLookupResultDetailsForEntity(body, entityGroupType, entity, url)
           }))
           .filter(({ data }) => !_.isEmpty(data))
       )
@@ -43,13 +48,15 @@ const formatResult = ({
   simpleValues,
   elementValues: { self, ownerMachine },
   suspicions,
-  isMalicious
+  isMalicious,
+  guid
 }) => ({
   ..._.reduce(
     simpleValues,
     (agg, value, key) => ({ ...agg, [key]: value.values && value.values[0] }),
     {}
   ),
+  guid,
   isMalicious,
   hasMalops: self.elementValues[0].hasMalops,
   ...(!_.isEmpty(suspicions) && { suspicions }),
@@ -58,26 +65,32 @@ const formatResult = ({
   })
 });
 
-const aggregrateResultsForEntity = (entityGroupType) => (resultsForEntity) => {
+const aggregrateResultsForEntity = (entityGroupType, url) => (resultsForEntity) => {
   if (_.isEmpty(resultsForEntity)) return;
 
   const aggregateConsistentFields = (
     entityType, 
+    url,
     createInconsistentFields = () => ({})
   ) => (resultsForEntity) => {
+    const { customSuspicionFlags, queryType } = QUERY_CONSTANTS[entityType];
+
     const suspicions = transformSuspicions(
       resultsForEntity,
-      QUERY_CONSTANTS[entityType].customSuspicionFlags.concat([
+      customSuspicionFlags.concat([
         "isMalicious",
         "hasMalops"
       ])
     );
-
+    
     const maliciousClassificationTypes = createClassificationTypes(resultsForEntity);
 
     return {
       details: {
-        suspicionCount: _.toString(suspicions.length) || "0",
+        suspicionCount: suspicions.length,
+        expandedlink: 
+          `${url}/#/element?rootType=${queryType}` +
+          `&viewedGuids=${resultsForEntity.map(({guid}) => guid).join(",")}`,
         ...(suspicions.length && { suspicions }),
         ...(maliciousClassificationTypes.length && { maliciousClassificationTypes }),
         ...createInconsistentFields(resultsForEntity)
@@ -85,15 +98,15 @@ const aggregrateResultsForEntity = (entityGroupType) => (resultsForEntity) => {
     };
   };
 
-  const aggregateFile = aggregateConsistentFields(entityGroupType, (resultsForEntity) => ({
-    name: resultsForEntity[0].md5String,
+  const aggregateFile = aggregateConsistentFields(entityGroupType, url, (resultsForEntity) => ({
     entityType: entityGroupType.toUpperCase(),
     fileName: resultsForEntity[0].elementDisplayName,
+    md5Hash: resultsForEntity[0].md5String,
     sha1Hash: resultsForEntity[0].sha1String,
 
-    productType: resultsForEntity[0].productType,
+    productType: PRODUCT_TYPE_MAP[resultsForEntity[0].productType],
     productName: resultsForEntity[0].productName,
-    extensionType: resultsForEntity[0].extensionType,
+    extensionType: EXTENSION_TYPE_MAP[resultsForEntity[0].extensionType],
     fileDescription: resultsForEntity[0].fileDescription,
     size: resultsForEntity[0].size,
 
@@ -105,14 +118,12 @@ const aggregrateResultsForEntity = (entityGroupType) => (resultsForEntity) => {
   }));
 
   return {
-    ip: aggregateConsistentFields(entityGroupType, (resultsForEntity) => ({
-      name: resultsForEntity[0].elementDisplayName,
+    ip: aggregateConsistentFields(entityGroupType, url, (resultsForEntity) => ({
       entityType: "IPv4",
       country: resultsForEntity[0].countryNameOrNotExternalType,
       city: resultsForEntity[0].city
     })),
-    domain: aggregateConsistentFields(entityGroupType, (resultsForEntity) => ({
-      name: resultsForEntity[0].elementDisplayName,
+    domain: aggregateConsistentFields(entityGroupType, url, () => ({
       entityType: "Domain"
     })),
     md5: aggregateFile,
@@ -141,7 +152,8 @@ const transformSuspicions = (resultsForEntity, otherPossibleSuspicionsKeys) => {
     .map((unformattedSuspicions) =>
       _.chain(unformattedSuspicions)
         .replace("Suspicion", "")
-        .upperFirst()
+        .startCase()
+        .value()
     )
     .values();
 
@@ -155,8 +167,8 @@ const transformSuspicions = (resultsForEntity, otherPossibleSuspicionsKeys) => {
           (agg, suspicionKey) =>
             result[suspicionKey] &&
             result[suspicionKey] !== "false" &&
-            !agg.includes(_.upperFirst(suspicionKey))
-              ? [...agg, _.upperFirst(suspicionKey)]
+            !agg.includes(_.startCase(suspicionKey))
+              ? [...agg, _.startCase(suspicionKey)]
               : agg,
           []
         )
@@ -164,7 +176,7 @@ const transformSuspicions = (resultsForEntity, otherPossibleSuspicionsKeys) => {
     []
   );
 
-  return normalSuspicionsFlags.concat(otherPossibleSuspicionFlags).sort();
+  return [...normalSuspicionsFlags, ...otherPossibleSuspicionFlags].sort();
 };
 
 module.exports = getLookupResults;

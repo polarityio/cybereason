@@ -1,4 +1,89 @@
+<div class="view-in-ts">
+  <a href={{details.expandedlink}}>Expand to CyberReason {{fa-icon "external-link-square" class="external-link-icon"}}</a>
+</div>
 <div>
-  <span class="p-key">Test:</span>
-  <span class="p-value">{{details}}</span>
+  <div>
+    <span class="p-title">{{fa-icon "info" fixedWidth=true}}Indicator Details</span>
+  </div>
+  <div>
+    <span class="p-key">Indicator Type:</span>
+    <span class="p-value">{{details.entityType}}<br></span>
+  </div>
+  <div>
+    {{#if (eq details.entityType "IPv4")}}
+      <div>
+        {{#if details.country}}
+          <span class="p-key">Country:</span>
+          <span class="p-value">{{details.country}}<br></span>
+        {{/if}}
+        {{#if details.city}}
+          <span class="p-key">City:</span>
+          <span class="p-value">{{details.city}}<br></span>
+        {{/if}}
+      </div>
+    {{/if}}
+    {{#if (or (eq details.entityType "MD5") (eq details.entityType "SHA1"))}}
+      {{#if details.fileName}}
+        <span class="p-key">File Name:</span>
+        <span class="p-value">{{details.fileName}}<br></span>
+      {{/if}}
+      {{#if (and details.md5Hash (eq details.entityType "SHA1"))}}
+        <span class="p-key">MD5 Hash:</span>
+        <span class="p-value">{{details.md5Hash}}<br></span>
+      {{/if}}
+      {{#if (and details.sha1Hash (eq details.entityType "MD5"))}}
+        <span class="p-key">SHA1 Hash:</span>
+        <span class="p-value">{{details.sha1Hash}}<br></span>
+      {{/if}}
+      {{#if details.productName}}
+        <span class="p-key">Product Name:</span>
+        <span class="p-value">{{details.productName}}<br></span>
+      {{/if}}
+      {{#if details.productType}}
+        <span class="p-key">Product Type:</span>
+        <span class="p-value">{{details.productType}}<br></span>
+      {{/if}}
+      {{#if details.extensionType}}
+        <span class="p-key">Extension Type:</span>
+        <span class="p-value">{{details.extensionType}}<br></span>
+      {{/if}}
+      {{#if details.fileDescription}}
+        <span class="p-key">File Description:</span>
+        <span class="p-value">{{details.fileDescription}}<br></span>
+      {{/if}}
+      {{#if details.size}}
+        <span class="p-key">File Size:</span>
+        <span class="p-value">{{details.size}}<br></span>
+      {{/if}}
+      {{#if details.companyName}}
+        <span class="p-key">Company Name:</span>
+        <span class="p-value">{{details.companyName}}<br></span>
+      {{/if}}
+      {{#if details.machineNamesWhereFileIsLocated.length}}
+        <div>
+          <span class="p-title">{{fa-icon "map-marker" fixedWidth=true}} Last Seen Machine Ids</span>
+        </div>
+        <div class="wrap-container">
+          {{#each details.machineNamesWhereFileIsLocated as |machineName|}}
+            <span class="location-container">
+              <span class="integration-text-color">{{machineName}}</span>
+            </span>
+          {{/each}}
+        </div>
+      {{/if}}
+    {{/if}}
+  </div>
+
+  {{#if details.suspicionCount}}
+    <div>
+      <span class="p-title">{{fa-icon "bug" fixedWidth=true}} Suspicions</span>
+    </div>
+    <div class="wrap-container">
+      {{#each details.suspicions as |suspicion|}}
+        <span class="suspicion-container">
+          <span class="integration-text-color">{{suspicion}}</span>
+        </span>
+      {{/each}}
+    </div>
+  {{/if}}
 </div>

@@ -89,7 +89,10 @@ const formatQueryResponse = (entityGroup, entityGroupType, done) => (
   done(null, {
     ...result,
     entityGroupType,
-    body: _.map(result.body.data.resultIdToElementDataMap, (value) => value)
+    body: _.map(
+      result.body.data.resultIdToElementDataMap, 
+      (value, key) => ({...value, guid: key })
+    )
   });
 };
 
@@ -137,7 +140,7 @@ function doLookup(entities, options, cb) {
         return cb(err);
       }
 
-      const lookupResults = getLookupResults(results);
+      const lookupResults = getLookupResults(results, options.url);
 
       Logger.trace({ lookupResults }, "Results");
       cb(null, lookupResults);

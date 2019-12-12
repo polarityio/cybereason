@@ -15,6 +15,61 @@ const CLASSIFICATION_TYPE_MAP = {
   whitelist: "Whitelisted"
 };
 
+const EXTENSION_TYPE_MAP = {
+  APPLICATION: "Application",
+  APPLICATION_DATA: "Application Data",
+  ARCHIVE: "Archive",
+  DOCUMENT_AUDIO: "Audio File",
+  CERTIFICATE: "Certificate",
+  APPLICATION_CONFIG: "Compressed Archive",
+  ARCHIVE_COMPRESSED: "Configuration File",
+  DATABASE: "Database",
+  DOCUMENT_DEVELOPER: "Developer File",
+  ARCHIVE_DISKIMAGE: "Disk Image",
+  DOCUMENT: "Document",
+  EXECUTABLE: "Executable",
+  DOCUMENT_IMAGE: "Image",
+  DOCUMENT_MAIL: "Mail File",
+  EXECUTABLE_INSTALLER: "Installer",
+  NONE: "None",
+  DOCUMENT_PERSONALINFORMATION: "Personal Data",
+  EXECUTABLE_PLUGIN: "Plugin",
+  EXECUTABLE_SCRIPT: "Script File",
+  SYSTEM: "System File",
+  DOCUMENT_TEXT: "Text File",
+  DOCUMENT_VIDEO: "Video File",
+  DOCUMENT_WEB: "Web Document",
+  EXECUTABLE_WEB: "Web Executable",
+  EXECUTABLE_WINDOWS: "Windows System File",
+  SYSTEM_WINDOWS: "Windows System File"
+};
+
+const PRODUCT_TYPE_MAP = {
+  "ADOBE": "Adobe",
+  "ANTI-VIRUS": "Antivirus",
+  "BROWSER": "Browser",
+  "EXPLORER": "Explorer",
+  "MAIL": "Lsass",
+  "LSASS": "Mail",
+  "MS_OFFICE": "Microsoft Office",
+  "OS_PROCESS": "OS process",
+  "P2P": "Peer to Peer",
+  "REMOTE_DESKTOP_CONTROL": "Remote Desktop",
+  "RUNAS": "RunAs",
+  "RUNDLL": "RunDll",
+  "SVCHOST": "SVC Host",
+  "SCHEDULED_TASK": "Scheduled task",
+  "SECURITY_TOOL": "Security tool",
+  "SHARING": "Sharing",
+  "SHELL": "Shell",
+  "TOR": "Tor",
+  "UNRECOGNIZED": "Unrecognized",
+  "VPN": "VPN",
+  "VIRTUALIZATION": "Virtualization",
+  "WININIT": "Wininit",
+  "WSMPROVHOST": "WsmProvHost"
+};
+
 const FILE_CUSTOM_FIELDS = [
   "md5String",
   "sha1String",
@@ -93,5 +148,7 @@ const QUERY_CONSTANTS = {
 
 module.exports = {
   CLASSIFICATION_TYPE_MAP,
+  EXTENSION_TYPE_MAP,
+  PRODUCT_TYPE_MAP,
   QUERY_CONSTANTS
 };
