@@ -7,42 +7,42 @@ const {
   PRODUCT_TYPE_MAP
 } = require("./constants");
 
-const getLookupResults = (results, url) => {
-  const getLookupResultDetailsForEntity = (body, entityGroupType, entity, url) =>
-    _.chain(body)
-      .filter(resultMatchesEntity(entityGroupType, entity))
-      .map(formatResult)
-      .thru(aggregrateResultsForEntity(entityGroupType, url))
-      .value();
-      
-  return (
-    _.chain(results)
-      .filter(({ body }) => !_isMiss(body))
-      .flatMap(({ entity: entityGroup, entityGroupType, body }) =>
-        entityGroup
-          .map((entity) => ({
-            entity,
-            data: getLookupResultDetailsForEntity(body, entityGroupType, entity, url)
-          }))
-          .filter(({ data }) => !_.isEmpty(data))
-      )
-      .value()
-  );
-};
+const getLookupResults = (results, { url, onlyShowEntitiesWithSuspicions }) =>
+  _.chain(results)
+    .filter(({ body }) => !_isMiss(body))
+    .flatMap(({ entity: entityGroup, entityGroupType, body }) =>
+      entityGroup
+        .map((entity) => ({
+          entity,
+          data: getLookupResultDetailsForEntity(body, entityGroupType, entity, url)
+        }))
+        .filter(({ data }) => 
+          !_.isEmpty(data) || 
+          (onlyShowEntitiesWithSuspicions && data.details.suspicionCount)
+        )
+    )
+    .value()
 
 const _isMiss = (body) => _.isEmpty(body);
 
-const resultMatchesEntity = (entityGroupType, entity) => (result) =>
-  ({
-    ip: ({ elementDisplayName }) =>
-      elementDisplayName.values[0].toLowerCase() === entity.value.toLowerCase(),
-    domain: ({ elementDisplayName }) =>
-      elementDisplayName.values[0].toLowerCase() === entity.value.toLowerCase(),
-    md5: ({ md5String }) =>
-      md5String.values[0].toLowerCase() === entity.value.toLowerCase(),
-    sha1: ({ sha1String }) =>
-      sha1String.values[0].toLowerCase() === entity.value.toLowerCase()
+const getLookupResultDetailsForEntity = (body, entityGroupType, entity, url) =>
+  _.chain(body)
+    .filter(resultMatchesEntity(entityGroupType, entity))
+    .map(formatResult)
+    .thru(aggregrateResultsForEntity(entityGroupType, url))
+    .value();
+
+const resultMatchesEntity = (entityGroupType, entity) => (result) => {
+  const compareEntityToResult = (key) => (simpleValue) => 
+    simpleValue[key][0].toLowerCase()=== entity.value.toLowerCase();
+
+  return ({
+    ip: compareEntityToResult("elementDisplayName"),
+    domain: compareEntityToResult("elementDisplayName"),
+    md5: compareEntityToResult("md5String"),
+    sha1: compareEntityToResult("sha1String")
   }[entityGroupType](result.simpleValues));
+};
 
 const formatResult = ({
   simpleValues,
@@ -155,7 +155,7 @@ const transformSuspicions = (resultsForEntity, otherPossibleSuspicionsKeys) => {
         .startCase()
         .value()
     )
-    .values();
+    .value();
 
   /* 
     Input: otherPossibleSuspicionsKeys = ["isMalicious", "hasMalops"]

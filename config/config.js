@@ -70,6 +70,15 @@ module.exports = {
       type: "password",
       userCanEdit: true,
       adminOnly: false
+    },
+    {
+      key: "onlyShowEntitiesWithSuspicions",
+      name: "Only Show Entities With Suspicions",
+      description: "Only Show Entities that have One or more Suspicions on CyberReason",
+      default: false,
+      type: "boolean",
+      userCanEdit: true,
+      adminOnly: false
     }
   ]
 };

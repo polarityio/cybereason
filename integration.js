@@ -140,7 +140,7 @@ function doLookup(entities, options, cb) {
         return cb(err);
       }
 
-      const lookupResults = getLookupResults(results, options.url);
+      const lookupResults = getLookupResults(results, options);
 
       Logger.trace({ lookupResults }, "Results");
       cb(null, lookupResults);
