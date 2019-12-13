@@ -17,8 +17,9 @@ const getLookupResults = (results, { url, onlyShowEntitiesWithSuspicions }) =>
           data: getLookupResultDetailsForEntity(body, entityGroupType, entity, url)
         }))
         .filter(({ data }) => 
-          !_.isEmpty(data) || 
-          (onlyShowEntitiesWithSuspicions && data.details.suspicionCount)
+          !_.isEmpty(data) &&
+          (!onlyShowEntitiesWithSuspicions ||
+          (onlyShowEntitiesWithSuspicions && data.details.suspicionCount))
         )
     )
     .value()
