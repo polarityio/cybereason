@@ -34,7 +34,7 @@ const getLookupResultDetailsForEntity = (body, entityGroupType, entity, url) =>
 
 const resultMatchesEntity = (entityGroupType, entity) => (result) => {
   const compareEntityToResult = (key) => (simpleValue) => 
-    simpleValue[key][0].toLowerCase()=== entity.value.toLowerCase();
+    simpleValue[key].values[0].toLowerCase()=== entity.value.toLowerCase();
 
   return ({
     ip: compareEntityToResult("elementDisplayName"),
