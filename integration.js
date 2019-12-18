@@ -16,6 +16,7 @@ const getLookupResults = require("./helpers/getLookupResults");
 let Logger;
 let requestWithDefaults;
 const MAX_PARALLEL_LOOKUPS = 10;
+const IGNORED_IPS = new Set(['127.0.0.1', '255.255.255.255', '0.0.0.0']);
 
 const tokenCache = new NodeCache({
   stdTTL: 8 * 60 * 60 - 1200 //Token lasts 8 hours
@@ -98,6 +99,7 @@ const formatQueryResponse = (entityGroup, entityGroupType, done) => (
 
 const createRequestQueue = (entities, options, token) =>
   _.chain(entities)
+    .filter(({isIp, value}) => !isIp || (isIp && !IGNORED_IPS.has(value)))
     .groupBy(({ isIP, isDomain, isMD5, isSHA1 }) =>
       isIP ? "ip" : 
       isDomain ? "domain" : 

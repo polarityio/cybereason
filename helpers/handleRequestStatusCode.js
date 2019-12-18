@@ -39,7 +39,7 @@ const handleRequestStatusCode = (entity, statusCode, body) => {
   } else {
     error = 
       ERRORS[statusCode] || 
-      ERRORS[Math.round(statusCode / 10) * 10 === 500] ||
+      ERRORS[Math.round(statusCode / 10) * 10] ||
       {
         err: body,
         detail: `${body.error}: ${body.message}`

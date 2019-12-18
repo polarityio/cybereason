@@ -14,6 +14,9 @@ The Username for the CyberReason API.
 ### CyberReason API Password
 The Password for the CyberReason API.
 
+### Only Show Entities With Suspicions
+Only Show Entities that have One or more Suspicions on CyberReason
+
 ## Installation Instructions
 
 Installation instructions for integrations are provided on the [PolarityIO GitHub Page](https://polarityio.github.io/).

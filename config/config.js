@@ -1,7 +1,7 @@
 module.exports = {
   name: "CyberReason",
   acronym: "CR",
-  description:"CyberReason",
+  description:"CyberReason is a platform that provides next generation anti-virus and endpoint detection response and management capabilities",
   entityTypes: ['IPv4', 'domain', "SHA1", "MD5"],
   styles: ["./styles/sc.less"],
   block: {
@@ -37,10 +37,10 @@ module.exports = {
     // the url parameter (by embedding the auth info in the uri)
     proxy: "",
 
-    rejectUnauthorized: false
+    rejectUnauthorized: true
   },
   logging: {
-    level: "trace" //trace, debug, info, warn, error, fatal
+    level: "info" //trace, debug, info, warn, error, fatal
   },
   options: [
     {
