@@ -1,6 +1,6 @@
 {
   "main": "./integration.js",
-  "name": "CyberReason",
+  "name": "Cybereason",
   "version": "3.0.0-beta",
   "private": true,
   "dependencies": {

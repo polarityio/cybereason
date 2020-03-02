@@ -1,7 +1,7 @@
 module.exports = {
-  name: "CyberReason",
+  name: "Cybereason",
   acronym: "CR",
-  description:"CyberReason is a platform that provides next generation anti-virus and endpoint detection response and management capabilities",
+  description:"Cybereason is a platform that provides next generation anti-virus and endpoint detection response and management capabilities",
   entityTypes: ['IPv4', 'domain', "SHA1", "MD5"],
   styles: ["./styles/sc.less"],
   block: {
@@ -45,9 +45,9 @@ module.exports = {
   options: [
     {
       key: "url",
-      name: "Base CyberReason API URL",
+      name: "Base Cybereason API URL",
       description:
-        "The base URL for the CyberReason API including the schema (i.e., https://)",
+        "The base URL for the Cybereason API including the schema (i.e., https://)",
       type: "text",
       default: "",
       userCanEdit: false,
@@ -56,7 +56,7 @@ module.exports = {
     {
       key: "username",
       name: "Valid Username",
-      description: "Valid CyberReason Username",
+      description: "Valid Cybereason Username",
       default: "",
       type: "text",
       userCanEdit: true,
@@ -65,7 +65,7 @@ module.exports = {
     {
       key: "password",
       name: "Valid Password",
-      description: "Valid CyberReason Password",
+      description: "Valid Cybereason Password",
       default: "",
       type: "password",
       userCanEdit: true,
@@ -74,7 +74,7 @@ module.exports = {
     {
       key: "onlyShowEntitiesWithSuspicions",
       name: "Only Show Entities With Suspicions",
-      description: "Only Show Entities that have One or more Suspicions on CyberReason",
+      description: "Only Show Entities that have One or more Suspicions on Cybereason",
       default: false,
       type: "boolean",
       userCanEdit: true,
