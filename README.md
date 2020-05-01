@@ -1,21 +1,28 @@
-# Polarity - CyberReason Integration
+# Polarity - Cybereason Integration
 
-CyberReason is a platform that provides next generation anti-virus and endpoint detection response and management capabilities.
-The Polarity CyberReason integration allows Polarity to search CyberReason's API to return threat information on IP's, Domains and File Hashes.
+Cybereason is a platform that provides next generation anti-virus and endpoint detection response and management capabilities.
+The Polarity Cybereason integration allows Polarity to search Cybereason's API to return threat information on IP's, Domains and File Hashes.
 
-## CyberReason Integration Options
+Check out the integration below:
 
-### CyberReason API Base URL
-The base URL for the CyberReason API.
+<img width="430" alt="Cybereason" src="https://user-images.githubusercontent.com/58269952/71111751-a88bde00-218f-11ea-8347-17355f38146c.png">
 
-### CyberReason API Username
-The Username for the CyberReason API.
+To learn more about Cybereason, please visit: [official website](https://www.cybereason.com/)
 
-### CyberReason API Password
-The Password for the CyberReason API.
+
+## Cybereason Integration Options
+
+### Cybereason API Base URL
+The base URL for the Cybereason API.
+
+### Cybereason API Username
+The Username for the Cybereason API.
+
+### Cybereason API Password
+The Password for the Cybereason API.
 
 ### Only Show Entities With Suspicions
-Only Show Entities that have One or more Suspicions on CyberReason
+Only Show Entities that have One or more Suspicions on Cybereason
 
 ## Installation Instructions
 

@@ -27,7 +27,7 @@ function startup(logger) {
   requestWithDefaults = getRequestWithDefaults();
 }
 
-function getAuthToken({ url: cyberReasonUrl, username, password }, callback) {
+function getAuthToken({ url: cybereasonUrl, username, password }, callback) {
   const cacheKey = `${username}${password}`;
 
   const cachedToken = tokenCache.get(cacheKey);
@@ -35,7 +35,7 @@ function getAuthToken({ url: cyberReasonUrl, username, password }, callback) {
 
   const requestOptions = {
     method: "POST",
-    uri: `${cyberReasonUrl}/login.html`,
+    uri: `${cybereasonUrl}/login.html`,
     qs: {
       username,
       password
