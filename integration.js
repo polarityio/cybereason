@@ -84,7 +84,12 @@ const formatQueryResponse = (entityGroup, entityGroupType, done) => (
   const [statusError, result] = handleRequestStatusCode(entityGroup, statusCode, body);
   if (statusError) return done(statusError);
 
-  if (_.isEmpty(result.body.data.resultIdToElementDataMap))
+  if (
+    !result ||
+    !result.body ||
+    !result.body.data ||
+    _.isEmpty(result.body.data.resultIdToElementDataMap)
+  )
     return done(null, { ...result, body: null });
 
   done(null, {
