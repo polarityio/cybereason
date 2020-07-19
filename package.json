@@ -5,7 +5,7 @@
   "private": true,
   "dependencies": {
     "async": "^2.6",
-    "lodash": "^4.17.11",
+    "lodash": "^4.17.19",
     "node-cache": "^4.2.0",
     "request": "^2.88"
   }
