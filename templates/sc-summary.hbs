@@ -1,21 +1,21 @@
-<span class="integration-summary-tag integration-background-color integration-border-color">
+<span {{on "click" (optional this.scrollToIntegration)}} class="integration-summary-tag integration-background-color integration-border-color">
   <span class="acronym integration-text-bold-color">{{block.acronym}}</span>
   <span class="integration-text-color">Suspicion Count: {{details.suspicionCount}}</span>
 </span>
 {{#if details.machineNamesWhereFileIsLocated.length}}
-  <span class="integration-summary-tag integration-background-color integration-border-color">
+  <span {{on "click" (optional this.scrollToIntegration)}} class="integration-summary-tag integration-background-color integration-border-color">
     <span class="acronym integration-text-bold-color">{{block.acronym}}</span>
     <span class="integration-text-color"># of Machines Found On: {{details.machineNamesWhereFileIsLocated.length}}</span>
   </span>
 {{/if}}
 {{#if details.fileName}}
-  <span class="integration-summary-tag integration-background-color integration-border-color">
+  <span {{on "click" (optional this.scrollToIntegration)}} class="integration-summary-tag integration-background-color integration-border-color">
     <span class="acronym integration-text-bold-color">{{block.acronym}}</span>
     <span class="integration-text-color">File Name: {{details.fileName}}</span>
   </span>
 {{/if}}
 {{#if details.maliciousClassificationTypes}}
-  <span class="integration-summary-tag integration-background-color integration-border-color">
+  <span {{on "click" (optional this.scrollToIntegration)}} class="integration-summary-tag integration-background-color integration-border-color">
     <span class="acronym integration-text-bold-color">{{block.acronym}}</span>
     <span class="integration-text-color">Status: {{details.maliciousClassificationTypes}}</span>
   </span>
