@@ -36,7 +36,7 @@ function getAuthToken({ url: cybereasonUrl, username, password }, callback) {
   const requestOptions = {
     method: "POST",
     uri: `${cybereasonUrl}/login.html`,
-    qs: {
+    form: {
       username,
       password
     },

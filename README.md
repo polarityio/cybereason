@@ -23,6 +23,9 @@ The Password for the Cybereason API.
 
 ### Only Show Entities With Suspicions
 Only Show Entities that have One or more Suspicions on Cybereason
+ 
+## Not Getting Results
+> ***NOTE***: If you are not seeing results in Cybereason, please confirm you account doesn't have an expired password.
 
 ## Installation Instructions
 
