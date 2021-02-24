@@ -1,5 +1,5 @@
 const CLASSIFICATION_TYPE_MAP = {
-  blacklist: "Blacklisted",
+  blocklist: "Blocklisted",
   av_detected: "Detected by Anti-Malware",
   hacktool: "Hacking Tool",
   maltool: "Malicious tool",
@@ -12,7 +12,7 @@ const CLASSIFICATION_TYPE_MAP = {
   unknown: "Unknown",
   unresolved: "Unresolved domain",
   unwanted: "Unwanted program",
-  whitelist: "Whitelisted"
+  allowlist: "Allowlisted"
 };
 
 const EXTENSION_TYPE_MAP = {

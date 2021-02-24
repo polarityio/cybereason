@@ -4,6 +4,7 @@ module.exports = {
   description:"Cybereason is a platform that provides next generation anti-virus and endpoint detection response and management capabilities",
   entityTypes: ['IPv4', 'domain', "SHA1", "MD5"],
   styles: ["./styles/sc.less"],
+  defaultColor: "dark-red",
   block: {
     component: {
       file: "./components/sc-block.js"
