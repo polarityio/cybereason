@@ -143,8 +143,8 @@ const createClassificationTypes = (resultsForEntity) =>
 
 const transformSuspicions = (resultsForEntity, otherPossibleSuspicionsKeys) => {
   /* 
-    Input: resultsForEntity[i].suspicions = { blackListedFileSuspicion: 123422142342134 }
-    Output: ["BlackListedFile"]
+    Input: resultsForEntity[i].suspicions = { blockListedFileSuspicion: 123422142342134 }
+    Output: ["BlockListedFile"]
   */
   const normalSuspicionsFlags = _.chain(resultsForEntity)
     .filter(({ suspicions }) => suspicions)
