@@ -1,0 +1,80 @@
+{
+  "name": "Cybereason",
+  "acronym": "CR",
+  "description": "Cybereason is a platform that provides next generation anti-virus and endpoint detection response and management capabilities",
+  "entityTypes": [
+    "IPv4",
+    "domain",
+    "SHA1",
+    "MD5"
+  ],
+  "styles": [
+    "./styles/sc.less"
+  ],
+  "defaultColor": "dark-red",
+  "block": {
+    "component": {
+      "file": "./components/sc-block.js"
+    },
+    "template": {
+      "file": "./templates/sc-block.hbs"
+    }
+  },
+  "summary": {
+    "component": {
+      "file": "./components/sc-summary.js"
+    },
+    "template": {
+      "file": "./templates/sc-summary.hbs"
+    }
+  },
+  "request": {
+    "cert": "",
+    "key": "",
+    "passphrase": "",
+    "ca": "",
+    "proxy": "",
+    "rejectUnauthorized": true
+  },
+  "logging": {
+    "level": "info"
+  },
+  "options": [
+    {
+      "key": "url",
+      "name": "Base Cybereason API URL",
+      "description": "The base URL for the Cybereason API including the schema (i.e., https://)",
+      "type": "text",
+      "default": "",
+      "userCanEdit": false,
+      "adminOnly": true
+    },
+    {
+      "key": "username",
+      "name": "Valid Username",
+      "description": "Valid Cybereason Username",
+      "default": "",
+      "type": "text",
+      "userCanEdit": true,
+      "adminOnly": false
+    },
+    {
+      "key": "password",
+      "name": "Valid Password",
+      "description": "Valid Cybereason Password",
+      "default": "",
+      "type": "password",
+      "userCanEdit": true,
+      "adminOnly": false
+    },
+    {
+      "key": "onlyShowEntitiesWithSuspicions",
+      "name": "Only Show Entities With Suspicions",
+      "description": "Only Show Entities that have One or more Suspicions on Cybereason",
+      "default": false,
+      "type": "boolean",
+      "userCanEdit": true,
+      "adminOnly": false
+    }
+  ]
+}
