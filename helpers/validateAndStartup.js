@@ -1,6 +1,6 @@
 const config = require("../config/config");
 const fs = require("fs");
-const request = require("request");
+const request = require("postman-request");
 
 const getRequestWithDefaults = () => {
   let defaults = {};
