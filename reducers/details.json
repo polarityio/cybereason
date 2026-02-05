@@ -1,0 +1,41 @@
+{
+  "root": {
+    "path": "",
+    "on_null": "return_empty"
+  },
+  "pipeline": [
+    {
+      "op": "copy",
+      "from": "suspicionCount",
+      "to": "reduced_results.suspicion_count"
+    },
+    {
+      "op": "copy",
+      "from": "maliciousClassificationTypes",
+      "to": "reduced_results.malicious_classification_types"
+    },
+    {
+      "op": "copy",
+      "from": "machineNamesWhereFileIsLocated",
+      "to": "reduced_results.machine_names_where_file_is_located"
+    },
+    {
+      "op": "copy",
+      "from": "productName",
+      "to": "reduced_results.product_name"
+    },
+    {
+      "op": "copy",
+      "from": "productType",
+      "to": "reduced_results.product_type"
+    },
+    {
+      "op": "prune",
+      "strategy": "empty_values",
+      "target": "reduced_results"
+    }
+  ],
+  "output": {
+    "result": "$working.reduced_results"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "suspicionCount": 3,
+  "expandedlink": "https://cybereason.example.com/#/element?rootType=File&viewedGuids=abc123,def456",
+  "suspicions": [
+    "Blocked Listed File",
+    "Has Autorun",
+    "Is Malicious"
+  ],
+  "maliciousClassificationTypes": "Malware, Ransomware",
+  "entityType": "MD5",
+  "fileName": "malicious_payload.exe",
+  "md5Hash": "5d41402abc4b2a76b9719d911017c592",
+  "sha1Hash": "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d",
+  "productName": "Windows Executable",
+  "productType": "Executable",
+  "extensionType": "Executable",
+  "fileDescription": "Suspicious executable file",
+  "size": 2048576,
+  "companyName": "Unknown Publisher",
+  "machineNamesWhereFileIsLocated": [
+    "WORKSTATION-001",
+    "SERVER-PROD-05",
+    "LAPTOP-HR-12"
+  ],
+  "internalMetadata": {
+    "queryId": "q_98765",
+    "processingTime": 245,
+    "dataSource": "endpoint_sensor"
+  },
+  "debugInfo": {
+    "rawGuid": "abc123def456",
+    "queryTimestamp": "2024-01-15T14:32:10.000Z",
+    "apiVersion": "v2.1"
+  },
+  "guid": "abc123",
+  "isMalicious": true,
+  "hasMalops": true
+}
